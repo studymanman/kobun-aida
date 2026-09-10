@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>行間ひろげ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#f6f3ec;
+    --paper-deep:#efe9db;
+    --ink:#2a2620;
+    --ink-soft:#6b6357;
+    --seal:#a3352a;
+    --seal-soft:#c96b5e;
+    --line:#c9a66b;
+    --ok:#3f6b52;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
+    color:var(--ink);
+    font-family:'Noto Sans JP', sans-serif;
+    min-height:100vh;
+    padding-bottom:48px;
+  }
+  header{
+    padding:22px 20px 16px;
+    border-bottom:1px solid rgba(42,38,32,0.12);
+    background:var(--paper-deep);
+  }
+  header h1{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:22px;
+    margin:0 0 4px;
+    letter-spacing:.04em;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  header h1 .mark{
+    display:inline-block;
+    width:9px;height:9px;
+    background:var(--seal);
+    border-radius:50%;
+    transform:translateY(-2px);
+  }
+  header p{
+    margin:0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+  main{max-width:520px;margin:0 auto;padding:18px 16px 0;}
+
+  .steps{display:flex;gap:6px;margin:14px 0 18px;padding:0 2px;}
+  .steps .dot{
+    flex:1;height:3px;background:rgba(42,38,32,0.14);border-radius:3px;overflow:hidden;
+  }
+  .steps .dot.active{background:var(--seal);}
+  .steps .dot.done{background:var(--line);}
+
+  .panel{
+    background:var(--card);
+    border:1px solid rgba(42,38,32,0.10);
+    border-radius:3px;
+    padding:16px;
+    margin-bottom:16px;
+    box-shadow:0 1px 0 rgba(42,38,32,0.04);
+  }
+  .panel h2{
+    font-family:'Shippori Mincho', serif;
+    font-size:15.5px;
+    margin:0 0 10px;
+    font-weight:700;
+  }
+  .hint{font-size:12.5px;color:var(--ink-soft);line-height:1.7;margin:0 0 12px;}
+
+  .stage{
+    position:relative;
+    width:100%;
+    background:#111;
+    border-radius:2px;
+    overflow:hidden;
+    touch-action:none;
+    line-height:0;
+  }
+  .stage video, .stage canvas{width:100%;display:block;}
+  .stage canvas{cursor:grab;}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+  button{
+    font-family:'Noto Sans JP', sans-serif;
+    font-size:13.5px;
+    padding:11px 16px;
+    border-radius:2px;
+    border:1px solid rgba(42,38,32,0.18);
+    background:var(--card);
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s;
+  }
+  button:active{background:var(--paper-deep);}
+  button.primary{
+    background:var(--seal);
+    border-color:var(--seal);
+    color:#fdf9f2;
+    font-weight:500;
+  }
+  button.primary:active{background:var(--seal-soft);}
+  button.ghost{background:transparent;}
+  button:disabled{opacity:.35;cursor:default;}
+  button.block{width:100%;}
+
+  .stepper{display:flex;align-items:center;gap:12px;}
+  .stepper button{width:38px;height:38px;padding:0;font-size:18px;line-height:1;}
+  .stepper .n{font-size:16px;min-width:20px;text-align:center;font-variant-numeric:tabular-nums;}
+
+  input[type=range]{width:100%;accent-color:var(--seal);}
+  .gapval{font-size:12.5px;color:var(--ink-soft);display:flex;justify-content:space-between;margin-top:4px;}
+
+  .thumbs{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;}
+  .thumb{
+    flex:0 0 auto;
+    width:72px;
+    border:1px solid rgba(42,38,32,0.15);
+    background:var(--paper-deep);
+    position:relative;
+  }
+  .thumb img{width:100%;display:block;}
+  .thumb .no{
+    position:absolute;top:2px;left:3px;font-size:10px;background:rgba(42,38,32,0.7);color:#fff;
+    padding:1px 4px;border-radius:2px;
+  }
+  .thumb .rm{
+    position:absolute;bottom:0;right:0;
+    background:var(--seal);color:#fff;border:none;font-size:11px;padding:2px 5px;line-height:1;
+  }
+
+  .empty{
+    font-size:12.5px;color:var(--ink-soft);
+    border:1px dashed rgba(42,38,32,0.25);
+    padding:16px;text-align:center;
+  }
+
+  .badge{
+    display:inline-block;font-size:11px;color:var(--ok);border:1px solid var(--ok);
+    padding:2px 6px;border-radius:2px;margin-left:6px;
+  }
+
+  .file-fallback{margin-top:8px;}
+  .file-fallback input{display:none;}
+  .file-fallback label{
+    display:inline-block;font-size:12.5px;color:var(--ink-soft);text-decoration:underline;cursor:pointer;
+  }
+
+  #camError{font-size:12.5px;color:var(--seal);margin:8px 0 0;display:none;}
+  footer{max-width:520px;margin:0 auto;padding:6px 16px 20px;font-size:11px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="mark"></span>行間ひろげ</h1>
+  <p>写真の行と行の間に線を合わせて、そこに余白を差し込みPDFにします。文字は読み取らず、画像のまま並べ替えます。</p>
+</header>
+
+<main>
+  <div class="steps">
+    <div class="dot" id="dot1"></div>
+    <div class="dot" id="dot2"></div>
+    <div class="dot" id="dot3"></div>
+    <div class="dot" id="dot4"></div>
+  </div>
+
+  <!-- STEP 1: capture -->
+  <section class="panel" id="panelCapture">
+    <h2>① 写真を撮る</h2>
+    <p class="hint">等間隔の線が表示されます。文字の行間（余白部分）に線が来るように構図を合わせてから撮影してください。線の数は後でも調整できます。</p>
+    <div class="stage" id="camStage">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="camOverlay"></canvas>
+    </div>
+    <div id="camError"></div>
+    <div class="row">
+      <button class="primary block" id="btnShoot">撮影する</button>
+    </div>
+    <div class="row">
+      <div class="stepper">
+        <button id="lineMinus">−</button>
+        <span class="n" id="lineCountLabel">6</span>
+        <button id="linePlus">+</button>
+      </div>
+      <span class="hint" style="margin:0;align-self:center;">撮影時の線の本数</span>
+    </div>
+    <div class="file-fallback">
+      <label for="fileInput">カメラが使えない場合は、端末から写真を選ぶ</label>
+      <input type="file" accept="image/*" id="fileInput">
+    </div>
+  </section>
+
+  <!-- STEP 2: adjust -->
+  <section class="panel" id="panelAdjust" style="display:none;">
+    <h2>② 線を行間に合わせる</h2>
+    <p class="hint">線をドラッグして、文字と文字の間の余白（行間）に正確に合わせてください。線をタップすると選択、「線を追加」で増やせます。</p>
+    <div class="stage" id="adjStage">
+      <canvas id="adjCanvas"></canvas>
+    </div>
+    <div class="row">
+      <button id="btnAddLine">線を追加</button>
+      <button id="btnDelLine">選択した線を削除</button>
+      <button id="btnEven">均等に並べ直す</button>
+    </div>
+    <div class="row">
+      <button class="ghost" id="btnRetake">撮り直す</button>
+      <button class="primary" id="btnConfirmLines" style="margin-left:auto;">この位置で決定</button>
+    </div>
+  </section>
+
+  <!-- STEP 3: preview & gap -->
+  <section class="panel" id="panelPreview" style="display:none;">
+    <h2>③ 余白の広さを決める</h2>
+    <p class="hint">スライダーで行間に差し込む余白を調整できます。プレビューを見ながら読みやすい広さにしてください。</p>
+    <div class="stage" id="prevStage">
+      <canvas id="prevCanvas"></canvas>
+    </div>
+    <input type="range" id="gapSlider" min="0" max="200" value="40">
+    <div class="gapval"><span>狭い</span><span id="gapLabel">40px</span><span>広い</span></div>
+    <div class="row">
+      <button class="ghost" id="btnBackToAdjust">線を直す</button>
+      <button class="primary block" id="btnAddPage" style="margin-left:auto;">このページを追加</button>
+    </div>
+  </section>
+
+  <!-- STEP 4: pages & export -->
+  <section class="panel" id="panelPages">
+    <h2>④ ページ一覧<span class="badge" id="pageCountBadge" style="display:none;"></span></h2>
+    <div id="thumbs" class="thumbs"></div>
+    <div class="empty" id="emptyPages">まだページがありません。撮影して追加してください。</div>
+    <p class="hint" style="margin-top:14px;">PDFのページのふち全体に付ける余白(外側の白い縁)</p>
+    <input type="range" id="marginSlider" min="0" max="30" value="0">
+    <div class="gapval"><span>ふちなし</span><span id="marginLabel">0mm</span><span>広め</span></div>
+    <div class="row">
+      <button class="ghost" id="btnAddMore">＋ 続けて撮影する</button>
+      <button class="primary block" id="btnExport" disabled style="margin-left:auto;">PDFを書き出す</button>
+    </div>
+  </section>
+</main>
+
+<footer>撮影・処理はすべてこの画面内（お使いの端末）で行われ、外部に送信されません。</footer>
+
+<script>
+(function(){
+  const MAX_DIM = 1800; // cap resolution for performance
+
+  let stream = null;
+  let lineCount = 6;
+  let sourceImg = null;     // current captured/loaded image (HTMLImageElement)
+  let srcW = 0, srcH = 0;
+  let lines = [];           // x positions in source-image pixel space
+  let dragIdx = -1;
+  let selectedIdx = -1;
+  let adjScale = 1;         // displayed canvas px per source px
+  let gapPx = 40;
+  let composedDataURL = null;
+  let composedW = 0, composedH = 0;
+  const pages = [];         // {dataURL, w, h}
+
+  const $ = id => document.getElementById(id);
+  const dots = [$('dot1'),$('dot2'),$('dot3'),$('dot4')];
+
+  function setStep(n){
+    dots.forEach((d,i)=>{
+      d.classList.remove('active','done');
+      if(i < n-1) d.classList.add('done');
+      if(i === n-1) d.classList.add('active');
+    });
+  }
+
+  function show(id){ $(id).style.display = ''; }
+  function hide(id){ $(id).style.display = 'none'; }
+
+  // ---------- STEP 1: camera ----------
+  const video = $('video');
+  const camOverlay = $('camOverlay');
+  const camCtx = camOverlay.getContext('2d');
+
+  async function startCamera(){
+    $('camError').style.display = 'none';
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:{ ideal:'environment' } },
+        audio:false
+      });
+      video.srcObject = stream;
+      await video.play();
+      requestAnimationFrame(drawCamOverlay);
+    }catch(err){
+      $('camError').textContent = 'カメラを起動できませんでした。下の「端末から写真を選ぶ」をお使いください。';
+      $('camError').style.display = 'block';
+      video.style.display = 'none';
+    }
+  }
+
+  function drawCamOverlay(){
+    if(!stream) return;
+    const w = video.videoWidth, h = video.videoHeight;
+    if(w && h){
+      camOverlay.width = w; camOverlay.height = h;
+      camOverlay.style.position = 'absolute';
+      camOverlay.style.top = 0; camOverlay.style.left = 0;
+      camCtx.clearRect(0,0,w,h);
+      camCtx.strokeStyle = 'rgba(220,60,45,0.85)';
+      camCtx.lineWidth = Math.max(1, w/500);
+      const step = w/(lineCount+1);
+      for(let i=1;i<=lineCount;i++){
+        const x = Math.round(step*i);
+        camCtx.beginPath();
+        camCtx.moveTo(x,0);
+        camCtx.lineTo(x,h);
+        camCtx.stroke();
+      }
+    }
+    requestAnimationFrame(drawCamOverlay);
+  }
+
+  $('linePlus').onclick = ()=>{ lineCount = Math.min(20, lineCount+1); $('lineCountLabel').textContent = lineCount; };
+  $('lineMinus').onclick = ()=>{ lineCount = Math.max(1, lineCount-1); $('lineCountLabel').textContent = lineCount; };
+
+  function stopCamera(){
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  }
+
+  $('btnShoot').onclick = ()=>{
+    if(!video.videoWidth) return;
+    const cvs = document.createElement('canvas');
+    let w = video.videoWidth, h = video.videoHeight;
+    const scale = Math.min(1, MAX_DIM/Math.max(w,h));
+    cvs.width = Math.round(w*scale); cvs.height = Math.round(h*scale);
+    cvs.getContext('2d').drawImage(video, 0,0, cvs.width, cvs.height);
+    loadSourceFromDataURL(cvs.toDataURL('image/jpeg',0.92));
+    stopCamera();
+  };
+
+  $('fileInput').onchange = (e)=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => loadSourceFromDataURL(ev.target.result);
+    reader.readAsDataURL(f);
+  };
+
+  function loadSourceFromDataURL(url){
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.width, h = img.height;
+      const scale = Math.min(1, MAX_DIM/Math.max(w,h));
+      if(scale < 1){
+        const cvs = document.createElement('canvas');
+        cvs.width = Math.round(w*scale); cvs.height = Math.round(h*scale);
+        cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height);
+        const img2 = new Image();
+        img2.onload = ()=> beginAdjust(img2);
+        img2.src = cvs.toDataURL('image/jpeg',0.92);
+      } else {
+        beginAdjust(img);
+      }
+    };
+    img.src = url;
+  }
+
+  function beginAdjust(img){
+    stopCamera();
+    sourceImg = img;
+    srcW = img.width; srcH = img.height;
+    lines = evenLines(lineCount, srcW);
+    selectedIdx = -1;
+    hide('panelCapture'); show('panelAdjust'); hide('panelPreview');
+    setStep(2);
+    setTimeout(drawAdjust, 0);
+  }
+
+  function evenLines(n, width){
+    const step = width/(n+1);
+    const arr = [];
+    for(let i=1;i<=n;i++) arr.push(Math.round(step*i));
+    return arr;
+  }
+
+  // ---------- STEP 2: adjust ----------
+  const adjCanvas = $('adjCanvas');
+  const adjCtx = adjCanvas.getContext('2d');
+
+  function drawAdjust(){
+    const containerW = adjCanvas.parentElement.clientWidth;
+    adjScale = containerW / srcW;
+    adjCanvas.width = containerW;
+    adjCanvas.height = Math.round(srcH*adjScale);
+    adjCtx.drawImage(sourceImg, 0,0, adjCanvas.width, adjCanvas.height);
+    lines.forEach((x,i)=>{
+      const dx = x*adjScale;
+      adjCtx.strokeStyle = (i===selectedIdx) ? 'rgba(163,53,42,1)' : 'rgba(220,60,45,0.85)';
+      adjCtx.lineWidth = (i===selectedIdx) ? 3 : 2;
+      adjCtx.beginPath();
+      adjCtx.moveTo(dx,0); adjCtx.lineTo(dx, adjCanvas.height);
+      adjCtx.stroke();
+      // handle
+      adjCtx.fillStyle = adjCtx.strokeStyle;
+      adjCtx.beginPath();
+      adjCtx.arc(dx, 14, 7, 0, Math.PI*2);
+      adjCtx.fill();
+    });
+  }
+
+  function nearestLine(px){
+    let best=-1, bestD=18;
+    lines.forEach((x,i)=>{
+      const d = Math.abs(x*adjScale - px);
+      if(d<bestD){ bestD=d; best=i; }
+    });
+    return best;
+  }
+
+  let downPt=null, moved=false;
+  adjCanvas.addEventListener('pointerdown', e=>{
+    adjCanvas.setPointerCapture(e.pointerId);
+    const rect = adjCanvas.getBoundingClientRect();
+    const px = e.clientX-rect.left;
+    dragIdx = nearestLine(px);
+    downPt = px; moved=false;
+  });
+  adjCanvas.addEventListener('pointermove', e=>{
+    if(dragIdx<0) return;
+    moved = true;
+    const rect = adjCanvas.getBoundingClientRect();
+    const px = Math.max(0, Math.min(adjCanvas.width, e.clientX-rect.left));
+    lines[dragIdx] = Math.round(px/adjScale);
+    lines.sort((a,b)=>a-b);
+    // dragIdx may shift after sort; re-find by value proximity not needed since redraw uses index only for color
+    drawAdjust();
+  });
+  adjCanvas.addEventListener('pointerup', e=>{
+    if(dragIdx>=0){
+      selectedIdx = moved ? dragIdx : dragIdx;
+    }
+    dragIdx=-1;
+    drawAdjust();
+  });
+
+  $('btnAddLine').onclick = ()=>{
+    const x = Math.round(srcW/2);
+    lines.push(x);
+    lines.sort((a,b)=>a-b);
+    selectedIdx = lines.indexOf(x);
+    drawAdjust();
+  };
+  $('btnDelLine').onclick = ()=>{
+    if(selectedIdx>=0 && selectedIdx<lines.length){
+      lines.splice(selectedIdx,1);
+      selectedIdx=-1;
+      drawAdjust();
+    }
+  };
+  $('btnEven').onclick = ()=>{
+    lines = evenLines(Math.max(1,lines.length||lineCount), srcW);
+    selectedIdx=-1;
+    drawAdjust();
+  };
+  $('btnRetake').onclick = ()=>{
+    hide('panelAdjust'); show('panelCapture'); setStep(1);
+    startCamera();
+  };
+  window.addEventListener('resize', ()=>{ if(sourceImg && $('panelAdjust').style.display!=='none') drawAdjust(); });
+
+  $('btnConfirmLines').onclick = ()=>{
+    if(lines.length<1){ alert('線を1本以上残してください。'); return; }
+    hide('panelAdjust'); show('panelPreview'); setStep(3);
+    renderComposed();
+  };
+
+  // ---------- STEP 3: compose with gaps ----------
+  const prevCanvas = $('prevCanvas');
+  const prevCtx = prevCanvas.getContext('2d');
+
+  function renderComposed(){
+    const bounds = [0, ...lines, srcW];
+    const outW = srcW + gapPx*lines.length;
+    prevCanvas.width = outW;
+    prevCanvas.height = srcH;
+    prevCtx.fillStyle = '#ffffff';
+    prevCtx.fillRect(0,0,outW,srcH);
+    let cursor = 0;
+    for(let i=0;i<bounds.length-1;i++){
+      const segW = bounds[i+1]-bounds[i];
+      if(segW>0){
+        prevCtx.drawImage(sourceImg, bounds[i],0, segW, srcH, cursor,0, segW, srcH);
+        cursor += segW;
+      }
+      if(i < lines.length){ cursor += gapPx; }
+    }
+    composedW = outW; composedH = srcH;
+    composedDataURL = prevCanvas.toDataURL('image/jpeg',0.9);
+    // fit displayed canvas visually via CSS max-width already (width:100%)
+  }
+
+  $('gapSlider').oninput = (e)=>{
+    gapPx = parseInt(e.target.value,10);
+    $('gapLabel').textContent = gapPx+'px';
+    renderComposed();
+  };
+  $('gapLabel').textContent = gapPx+'px';
+
+  $('btnBackToAdjust').onclick = ()=>{
+    hide('panelPreview'); show('panelAdjust'); setStep(2);
+    setTimeout(drawAdjust,0);
+  };
+
+  $('btnAddPage').onclick = ()=>{
+    pages.push({dataURL:composedDataURL, w:composedW, h:composedH});
+    refreshThumbs();
+    hide('panelPreview');
+    hide('panelAdjust');
+    show('panelCapture');
+    setStep(1);
+    startCamera();
+  };
+
+  // ---------- STEP 4: pages ----------
+  function refreshThumbs(){
+    const box = $('thumbs');
+    box.innerHTML = '';
+    pages.forEach((p,i)=>{
+      const d = document.createElement('div');
+      d.className='thumb';
+      d.innerHTML = '<span class="no">'+(i+1)+'</span><img src="'+p.dataURL+'"><button class="rm" data-i="'+i+'">×</button>';
+      box.appendChild(d);
+    });
+    box.querySelectorAll('.rm').forEach(btn=>{
+      btn.onclick = ()=>{ pages.splice(parseInt(btn.dataset.i,10),1); refreshThumbs(); };
+    });
+    $('emptyPages').style.display = pages.length ? 'none':'block';
+    $('btnExport').disabled = pages.length===0;
+    $('pageCountBadge').style.display = pages.length ? 'inline-block':'none';
+    $('pageCountBadge').textContent = pages.length+'ページ';
+  }
+
+  $('btnAddMore').onclick = ()=>{
+    hide('panelPreview'); hide('panelAdjust'); show('panelCapture'); setStep(1);
+    startCamera();
+  };
+
+  $('btnExport').onclick = ()=>{
+    if(!pages.length) return;
+    const { jsPDF } = window.jspdf;
+    const mmPerPx = 25.4/96;
+    let pdf = null;
+    pages.forEach((p,i)=>{
+      const wmm = p.w*mmPerPx, hmm = p.h*mmPerPx;
+      const orient = wmm>=hmm ? 'l':'p';
+      if(i===0){
+        pdf = new jsPDF({orientation:orient, unit:'mm', format:[wmm,hmm]});
+      }else{
+        pdf.addPage([wmm,hmm], orient);
+      }
+      pdf.addImage(p.dataURL,'JPEG',0,0,wmm,hmm);
+    });
+    pdf.save('行間ひろげ.pdf');
+  };
+
+  // init
+  refreshThumbs();
+  setStep(1);
+  startCamera();
+})();
+</script>
+</body>
+</html>
