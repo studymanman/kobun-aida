@@ -672,11 +672,11 @@
     downloadBtn.disabled = false;
   }
 
-  function cropCanvas(canvas, sy, sh) {
+  function cropCanvasX(canvas, sx, sw) {
     const c = document.createElement('canvas');
-    c.width = canvas.width;
-    c.height = sh;
-    c.getContext('2d').drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+    c.width = sw;
+    c.height = canvas.height;
+    c.getContext('2d').drawImage(canvas, sx, 0, sw, canvas.height, 0, 0, sw, canvas.height);
     return c;
   }
 
@@ -693,8 +693,8 @@
       return;
     }
 
-    // Always fill the page's full width; overflow continues onto the next page.
-    const pdfOrientation = 'p';
+    // Landscape page. Fill the page's full height; overflow width continues onto the next page.
+    const pdfOrientation = 'l';
     const pdf = new jsPDF({ unit: 'mm', format: paper, orientation: pdfOrientation });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
@@ -702,17 +702,17 @@
     const contentW = pageW - margin * 2;
     const contentH = pageH - margin * 2;
 
-    const scale = contentW / w;
-    const sliceHeightPx = Math.max(1, Math.floor(contentH / scale));
-    let sy = 0;
+    const scale = contentH / h;
+    const sliceWidthPx = Math.max(1, Math.floor(contentW / scale));
+    let sx = 0;
     let first = true;
-    while (sy < h) {
-      const sh = Math.min(sliceHeightPx, h - sy);
-      const slice = cropCanvas(resultCanvas, sy, sh);
+    while (sx < w) {
+      const sw = Math.min(sliceWidthPx, w - sx);
+      const slice = cropCanvasX(resultCanvas, sx, sw);
       const dataUrl = slice.toDataURL('image/png');
       if (!first) pdf.addPage(paper, pdfOrientation);
-      pdf.addImage(dataUrl, 'PNG', margin, margin, contentW, sh * scale);
-      sy += sh;
+      pdf.addImage(dataUrl, 'PNG', margin, margin, sw * scale, contentH);
+      sx += sw;
       first = false;
     }
     pdf.save('行間びらき.pdf');
