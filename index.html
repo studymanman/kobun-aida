@@ -680,14 +680,6 @@
     return c;
   }
 
-  function cropCanvasX(canvas, sx, sw) {
-    const c = document.createElement('canvas');
-    c.width = sw;
-    c.height = canvas.height;
-    c.getContext('2d').drawImage(canvas, sx, 0, sw, canvas.height, 0, 0, sw, canvas.height);
-    return c;
-  }
-
   downloadBtn.addEventListener('click', () => {
     const w = resultCanvas.width, h = resultCanvas.height;
     const paper = paperSelect.value;
@@ -701,8 +693,7 @@
       return;
     }
 
-    // Fill the page's full length in the reading direction; overflow becomes extra pages.
-    const isVerticalText = orientation === 'vertical';
+    // Always fill the page's full width; overflow continues onto the next page.
     const pdfOrientation = 'p';
     const pdf = new jsPDF({ unit: 'mm', format: paper, orientation: pdfOrientation });
     const pageW = pdf.internal.pageSize.getWidth();
@@ -711,39 +702,18 @@
     const contentW = pageW - margin * 2;
     const contentH = pageH - margin * 2;
 
-    if (isVerticalText) {
-      // Fill full page height; split across pages along the width (columns).
-      const scale = contentH / h;
-      const sliceWidthPx = Math.max(1, Math.floor(contentW / scale));
-      const slices = [];
-      let sx = 0;
-      while (sx < w) {
-        const sw = Math.min(sliceWidthPx, w - sx);
-        slices.push([sx, sw]);
-        sx += sw;
-      }
-      slices.reverse(); // vertical text reads right-to-left, so the rightmost slice is page 1
-      slices.forEach(([sx, sw], i) => {
-        const slice = cropCanvasX(resultCanvas, sx, sw);
-        const dataUrl = slice.toDataURL('image/png');
-        if (i > 0) pdf.addPage(paper, pdfOrientation);
-        pdf.addImage(dataUrl, 'PNG', margin, margin, sw * scale, contentH);
-      });
-    } else {
-      // Fill full page width; split across pages along the height (rows).
-      const scale = contentW / w;
-      const sliceHeightPx = Math.max(1, Math.floor(contentH / scale));
-      let sy = 0;
-      let first = true;
-      while (sy < h) {
-        const sh = Math.min(sliceHeightPx, h - sy);
-        const slice = cropCanvas(resultCanvas, sy, sh);
-        const dataUrl = slice.toDataURL('image/png');
-        if (!first) pdf.addPage(paper, pdfOrientation);
-        pdf.addImage(dataUrl, 'PNG', margin, margin, contentW, sh * scale);
-        sy += sh;
-        first = false;
-      }
+    const scale = contentW / w;
+    const sliceHeightPx = Math.max(1, Math.floor(contentH / scale));
+    let sy = 0;
+    let first = true;
+    while (sy < h) {
+      const sh = Math.min(sliceHeightPx, h - sy);
+      const slice = cropCanvas(resultCanvas, sy, sh);
+      const dataUrl = slice.toDataURL('image/png');
+      if (!first) pdf.addPage(paper, pdfOrientation);
+      pdf.addImage(dataUrl, 'PNG', margin, margin, contentW, sh * scale);
+      sy += sh;
+      first = false;
     }
     pdf.save('行間びらき.pdf');
   });
