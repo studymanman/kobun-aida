@@ -291,8 +291,8 @@
       <span class="label">用紙サイズ</span>
       <select id="paper-select">
         <option value="original">元のサイズ（1枚に収める）</option>
-        <option value="a4" selected>A4（はみ出たら分割）</option>
-        <option value="letter">レター（はみ出たら分割）</option>
+        <option value="a4" selected>A4（いっぱいに、はみ出たら分割）</option>
+        <option value="letter">レター（いっぱいに、はみ出たら分割）</option>
       </select>
     </div>
     <button class="primary" id="download-btn" disabled>PDFをダウンロード</button>
@@ -680,6 +680,14 @@
     return c;
   }
 
+  function cropCanvasX(canvas, sx, sw) {
+    const c = document.createElement('canvas');
+    c.width = sw;
+    c.height = canvas.height;
+    c.getContext('2d').drawImage(canvas, sx, 0, sw, canvas.height, 0, 0, sw, canvas.height);
+    return c;
+  }
+
   downloadBtn.addEventListener('click', () => {
     const w = resultCanvas.width, h = resultCanvas.height;
     const paper = paperSelect.value;
@@ -693,26 +701,49 @@
       return;
     }
 
-    const orientation = w > h ? 'l' : 'p';
-    const pdf = new jsPDF({ unit: 'mm', format: paper, orientation });
+    // Fill the page's full length in the reading direction; overflow becomes extra pages.
+    const isVerticalText = orientation === 'vertical';
+    const pdfOrientation = 'p';
+    const pdf = new jsPDF({ unit: 'mm', format: paper, orientation: pdfOrientation });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const margin = 10;
     const contentW = pageW - margin * 2;
     const contentH = pageH - margin * 2;
-    const scale = contentW / w; // mm per source px
-    const sliceHeightPx = Math.max(1, Math.floor(contentH / scale));
 
-    let sy = 0;
-    let first = true;
-    while (sy < h) {
-      const sh = Math.min(sliceHeightPx, h - sy);
-      const slice = cropCanvas(resultCanvas, sy, sh);
-      const dataUrl = slice.toDataURL('image/png');
-      if (!first) pdf.addPage(paper, orientation);
-      pdf.addImage(dataUrl, 'PNG', margin, margin, contentW, sh * scale);
-      sy += sh;
-      first = false;
+    if (isVerticalText) {
+      // Fill full page height; split across pages along the width (columns).
+      const scale = contentH / h;
+      const sliceWidthPx = Math.max(1, Math.floor(contentW / scale));
+      const slices = [];
+      let sx = 0;
+      while (sx < w) {
+        const sw = Math.min(sliceWidthPx, w - sx);
+        slices.push([sx, sw]);
+        sx += sw;
+      }
+      slices.reverse(); // vertical text reads right-to-left, so the rightmost slice is page 1
+      slices.forEach(([sx, sw], i) => {
+        const slice = cropCanvasX(resultCanvas, sx, sw);
+        const dataUrl = slice.toDataURL('image/png');
+        if (i > 0) pdf.addPage(paper, pdfOrientation);
+        pdf.addImage(dataUrl, 'PNG', margin, margin, sw * scale, contentH);
+      });
+    } else {
+      // Fill full page width; split across pages along the height (rows).
+      const scale = contentW / w;
+      const sliceHeightPx = Math.max(1, Math.floor(contentH / scale));
+      let sy = 0;
+      let first = true;
+      while (sy < h) {
+        const sh = Math.min(sliceHeightPx, h - sy);
+        const slice = cropCanvas(resultCanvas, sy, sh);
+        const dataUrl = slice.toDataURL('image/png');
+        if (!first) pdf.addPage(paper, pdfOrientation);
+        pdf.addImage(dataUrl, 'PNG', margin, margin, contentW, sh * scale);
+        sy += sh;
+        first = false;
+      }
     }
     pdf.save('行間びらき.pdf');
   });
