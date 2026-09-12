@@ -2,599 +2,720 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>行間ひろげ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行間びらき — 古文の行間を広げる</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-  :root{
-    --paper:#f6f3ec;
-    --paper-deep:#efe9db;
-    --ink:#2a2620;
-    --ink-soft:#6b6357;
-    --seal:#a3352a;
-    --seal-soft:#c96b5e;
-    --line:#c9a66b;
-    --ok:#3f6b52;
-    --card:#ffffff;
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--paper);
-    background-image:
-      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
-    color:var(--ink);
-    font-family:'Noto Sans JP', sans-serif;
-    min-height:100vh;
-    padding-bottom:48px;
-  }
-  header{
-    padding:22px 20px 16px;
-    border-bottom:1px solid rgba(42,38,32,0.12);
-    background:var(--paper-deep);
-  }
-  header h1{
-    font-family:'Shippori Mincho', serif;
-    font-weight:700;
-    font-size:22px;
-    margin:0 0 4px;
-    letter-spacing:.04em;
-    display:flex;
-    align-items:baseline;
-    gap:10px;
-  }
-  header h1 .mark{
-    display:inline-block;
-    width:9px;height:9px;
-    background:var(--seal);
-    border-radius:50%;
-    transform:translateY(-2px);
-  }
-  header p{
-    margin:0;
-    font-size:12.5px;
-    color:var(--ink-soft);
-    line-height:1.6;
-  }
-  main{max-width:520px;margin:0 auto;padding:18px 16px 0;}
-
-  .steps{display:flex;gap:6px;margin:14px 0 18px;padding:0 2px;}
-  .steps .dot{
-    flex:1;height:3px;background:rgba(42,38,32,0.14);border-radius:3px;overflow:hidden;
-  }
-  .steps .dot.active{background:var(--seal);}
-  .steps .dot.done{background:var(--line);}
-
-  .panel{
-    background:var(--card);
-    border:1px solid rgba(42,38,32,0.10);
-    border-radius:3px;
-    padding:16px;
-    margin-bottom:16px;
-    box-shadow:0 1px 0 rgba(42,38,32,0.04);
-  }
-  .panel h2{
-    font-family:'Shippori Mincho', serif;
-    font-size:15.5px;
-    margin:0 0 10px;
-    font-weight:700;
-  }
-  .hint{font-size:12.5px;color:var(--ink-soft);line-height:1.7;margin:0 0 12px;}
-
-  .stage{
-    position:relative;
-    width:100%;
-    background:#111;
-    border-radius:2px;
-    overflow:hidden;
-    touch-action:none;
-    line-height:0;
-  }
-  .stage video, .stage canvas{width:100%;display:block;}
-  .stage canvas{cursor:grab;}
-
-  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
-  button{
-    font-family:'Noto Sans JP', sans-serif;
-    font-size:13.5px;
-    padding:11px 16px;
-    border-radius:2px;
-    border:1px solid rgba(42,38,32,0.18);
-    background:var(--card);
-    color:var(--ink);
-    cursor:pointer;
-    transition:background .15s;
-  }
-  button:active{background:var(--paper-deep);}
-  button.primary{
-    background:var(--seal);
-    border-color:var(--seal);
-    color:#fdf9f2;
-    font-weight:500;
-  }
-  button.primary:active{background:var(--seal-soft);}
-  button.ghost{background:transparent;}
-  button:disabled{opacity:.35;cursor:default;}
-  button.block{width:100%;}
-
-  .stepper{display:flex;align-items:center;gap:12px;}
-  .stepper button{width:38px;height:38px;padding:0;font-size:18px;line-height:1;}
-  .stepper .n{font-size:16px;min-width:20px;text-align:center;font-variant-numeric:tabular-nums;}
-
-  input[type=range]{width:100%;accent-color:var(--seal);}
-  .gapval{font-size:12.5px;color:var(--ink-soft);display:flex;justify-content:space-between;margin-top:4px;}
-
-  .thumbs{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;}
-  .thumb{
-    flex:0 0 auto;
-    width:72px;
-    border:1px solid rgba(42,38,32,0.15);
-    background:var(--paper-deep);
-    position:relative;
-  }
-  .thumb img{width:100%;display:block;}
-  .thumb .no{
-    position:absolute;top:2px;left:3px;font-size:10px;background:rgba(42,38,32,0.7);color:#fff;
-    padding:1px 4px;border-radius:2px;
-  }
-  .thumb .rm{
-    position:absolute;bottom:0;right:0;
-    background:var(--seal);color:#fff;border:none;font-size:11px;padding:2px 5px;line-height:1;
+  :root {
+    --paper: #e4dcc5;
+    --paper-light: #efe9d8;
+    --ink: #2a2521;
+    --ink-soft: #6b6152;
+    --vermillion: #a63c2e;
+    --vermillion-dark: #8a2f23;
+    --line: #c7bb9a;
+    --line-soft: #d9cfb2;
   }
 
-  .empty{
-    font-size:12.5px;color:var(--ink-soft);
-    border:1px dashed rgba(42,38,32,0.25);
-    padding:16px;text-align:center;
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Sans JP', sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
   }
 
-  .badge{
-    display:inline-block;font-size:11px;color:var(--ok);border:1px solid var(--ok);
-    padding:2px 6px;border-radius:2px;margin-left:6px;
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
   }
 
-  .file-fallback{margin-top:8px;}
-  .file-fallback input{display:none;}
-  .file-fallback label{
-    display:inline-block;font-size:12.5px;color:var(--ink-soft);text-decoration:underline;cursor:pointer;
+  header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
   }
 
-  #camError{font-size:12.5px;color:var(--seal);margin:8px 0 0;display:none;}
-  footer{max-width:520px;margin:0 auto;padding:6px 16px 20px;font-size:11px;color:var(--ink-soft);}
+  h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 700;
+    font-size: 28px;
+    margin: 0 0 8px;
+    letter-spacing: 0.02em;
+  }
+
+  header p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  section { margin-bottom: 28px; }
+
+  .section-title {
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--ink-soft);
+    margin: 0 0 12px;
+  }
+
+  .upload-zone {
+    display: block;
+    border: 1px dashed var(--ink-soft);
+    padding: 28px 20px;
+    text-align: center;
+    background: var(--paper-light);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .upload-zone:hover, .upload-zone:focus-within { border-color: var(--vermillion); }
+  .upload-zone input { display: none; }
+  .upload-zone .btn-label {
+    display: inline-block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--vermillion);
+  }
+  .upload-zone .hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .control-row .label {
+    flex: 0 0 100px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  .segmented { display: inline-flex; border: 1px solid var(--ink); }
+  .segmented button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 7px 16px;
+    border: none;
+    background: var(--paper-light);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .segmented button + button { border-left: 1px solid var(--ink); }
+  .segmented button.active { background: var(--vermillion); color: #fff; }
+
+  input[type="range"] { flex: 1 1 140px; accent-color: var(--vermillion); }
+  .range-value {
+    flex: 0 0 48px;
+    text-align: right;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .redetect-btn {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 14px;
+    background: transparent;
+    color: var(--vermillion);
+    border: 1px solid var(--vermillion);
+    cursor: pointer;
+  }
+  .redetect-btn:hover { background: var(--vermillion); color: #fff; }
+
+  .previews { display: flex; flex-direction: column; gap: 20px; }
+  .preview-card {
+    background: var(--paper-light);
+    border: 1px solid var(--line);
+    padding: 12px;
+  }
+  .preview-card .caption { font-size: 12px; color: var(--ink-soft); margin: 0 0 4px; }
+  .preview-card .edit-hint { font-size: 11px; color: var(--ink-soft); margin: 0 0 8px; }
+  .preview-card .frame {
+    border: 1px solid var(--line-soft);
+    padding: 4px;
+    background: #fff;
+  }
+  .preview-card img, .preview-card canvas { display: block; width: 100%; height: auto; }
+  .empty-note { font-size: 13px; color: var(--ink-soft); padding: 24px 0; text-align: center; }
+
+  .stage { position: relative; touch-action: none; }
+  .boundary-line {
+    position: absolute;
+    background: var(--vermillion);
+    opacity: 0.85;
+    cursor: grab;
+  }
+  .boundary-line.vertical { top: 0; height: 100%; width: 3px; margin-left: -1.5px; }
+  .boundary-line.horizontal { left: 0; width: 100%; height: 3px; margin-top: -1.5px; }
+  .boundary-handle {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--vermillion);
+    color: #fff;
+    font-size: 13px;
+    line-height: 22px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 0 0 2px #fff;
+  }
+  .boundary-handle.vertical { top: -4px; margin-left: -11px; }
+  .boundary-handle.horizontal { left: -4px; margin-top: -11px; }
+
+  .status { font-size: 13px; color: var(--ink-soft); margin: 4px 0 20px; min-height: 18px; }
+  .status.warn { color: var(--vermillion); }
+
+  select {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 7px 10px;
+    border: 1px solid var(--ink);
+    background: var(--paper-light);
+    color: var(--ink);
+  }
+
+  button.primary {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 13px 24px;
+    background: var(--vermillion);
+    color: #fff;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  button.primary:hover { background: var(--vermillion-dark); }
+  button.primary:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<header>
-  <h1><span class="mark"></span>行間ひろげ</h1>
-  <p>写真の行と行の間に線を合わせて、そこに余白を差し込みPDFにします。文字は読み取らず、画像のまま並べ替えます。</p>
-</header>
+  <header>
+    <h1>行間びらき</h1>
+    <p>古文のテキストを撮影すると、行と行のあいだに書き込み用の余白を広げます。多少傾いた写真でも、傾き補正で直してから使えます。自動検出のあと、線をドラッグして自分で位置も直せます。写真は外部に送信されません。</p>
+  </header>
 
-<main>
-  <div class="steps">
-    <div class="dot" id="dot1"></div>
-    <div class="dot" id="dot2"></div>
-    <div class="dot" id="dot3"></div>
-    <div class="dot" id="dot4"></div>
-  </div>
+  <section>
+    <p class="section-title">写真を選ぶ</p>
+    <label class="upload-zone" for="file-input">
+      <span class="btn-label">写真を選ぶ・撮影する</span>
+      <span class="hint">ページ全体がまっすぐ写っている写真がおすすめです</span>
+      <input id="file-input" type="file" accept="image/*">
+    </label>
+  </section>
 
-  <!-- STEP 1: capture -->
-  <section class="panel" id="panelCapture">
-    <h2>① 写真を撮る</h2>
-    <p class="hint">等間隔の線が表示されます。文字の行間（余白部分）に線が来るように構図を合わせてから撮影してください。線の数は後でも調整できます。</p>
-    <div class="stage" id="camStage">
-      <video id="video" autoplay playsinline muted></video>
-      <canvas id="camOverlay"></canvas>
+  <section>
+    <p class="section-title">設定</p>
+    <div class="control-row">
+      <span class="label">傾き補正</span>
+      <input type="range" id="rotation-slider" min="-10" max="10" step="0.1" value="0">
+      <span class="range-value" id="rotation-value">0°</span>
     </div>
-    <div id="camError"></div>
-    <div class="row">
-      <button class="primary block" id="btnShoot">撮影する</button>
+    <div class="control-row">
+      <span class="label">書字方向</span>
+      <div class="segmented" id="orientation-toggle">
+        <button type="button" data-value="vertical" class="active">縦書き</button>
+        <button type="button" data-value="horizontal">横書き</button>
+      </div>
     </div>
-    <div class="row" style="align-items:center;">
-      <span class="hint" style="margin:0;">撮影時の線の本数</span>
-      <input type="number" id="lineCountInput" min="1" max="100" value="6" style="width:64px;padding:9px 8px;font-size:14px;border-radius:2px;border:1px solid rgba(42,38,32,0.25);">
-      <button id="lineQ10">+10</button>
-      <button id="lineQ25">+25</button>
-      <button id="lineQ50">50に</button>
-      <button id="lineQ100">100に</button>
+    <div class="control-row">
+      <span class="label">行間の広さ</span>
+      <input type="range" id="gap-slider" min="0" max="8" step="0.5" value="2.5">
+      <span class="range-value" id="gap-value">2.5%</span>
     </div>
-    <div class="file-fallback">
-      <label for="fileInput">カメラが使えない場合は、端末から写真を選ぶ</label>
-      <input type="file" accept="image/*" id="fileInput">
+    <div class="control-row">
+      <span class="label">検出感度</span>
+      <input type="range" id="sensitivity-slider" min="0" max="100" step="1" value="50">
+      <span class="range-value" id="sensitivity-value">50</span>
+    </div>
+    <div class="control-row">
+      <span class="label"></span>
+      <button type="button" class="redetect-btn" id="redetect-btn">自動検出をやり直す（手動の線はリセットされます）</button>
     </div>
   </section>
 
-  <!-- STEP 2: adjust -->
-  <section class="panel" id="panelAdjust" style="display:none;">
-    <h2>② 線を行間に合わせる</h2>
-    <p class="hint">線をドラッグして、文字と文字の間の余白（行間）に正確に合わせてください。線をタップすると選択、「線を追加」で増やせます。</p>
-    <div class="stage" id="adjStage">
-      <canvas id="adjCanvas"></canvas>
+  <section>
+    <p class="section-title">プレビュー</p>
+    <div class="previews">
+      <div class="preview-card">
+        <p class="caption">もとの写真</p>
+        <p class="edit-hint" id="edit-hint" style="display:none;">線をドラッグして調整・画像をタップで線を追加・線の上の×で削除できます</p>
+        <div class="frame">
+          <div class="empty-note" id="original-empty">まだ写真が選ばれていません</div>
+          <div class="stage" id="original-stage" style="display:none;">
+            <canvas id="original-canvas"></canvas>
+            <div id="boundary-layer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="preview-card">
+        <p class="caption">処理後（行間を広げた画像）</p>
+        <div class="frame">
+          <div class="empty-note" id="result-empty">写真を選ぶと自動で処理されます</div>
+          <canvas id="result-canvas" style="display:none;"></canvas>
+        </div>
+      </div>
     </div>
-    <div class="row">
-      <button id="btnAddLine">線を追加</button>
-      <button id="btnDelLine">選択した線を削除</button>
-      <button id="btnEven">均等に並べ直す</button>
-    </div>
-    <div class="row">
-      <button class="ghost" id="btnRetake">撮り直す</button>
-      <button class="primary" id="btnConfirmLines" style="margin-left:auto;">この位置で決定</button>
-    </div>
+    <p class="status" id="status"></p>
   </section>
 
-  <!-- STEP 3: preview & gap -->
-  <section class="panel" id="panelPreview" style="display:none;">
-    <h2>③ 余白の広さを決める</h2>
-    <p class="hint">スライダーで行間に差し込む余白を調整できます。プレビューを見ながら読みやすい広さにしてください。</p>
-    <div class="stage" id="prevStage">
-      <canvas id="prevCanvas"></canvas>
+  <section>
+    <p class="section-title">出力</p>
+    <div class="control-row">
+      <span class="label">用紙サイズ</span>
+      <select id="paper-select">
+        <option value="original">元のサイズ（1枚に収める）</option>
+        <option value="a4" selected>A4（はみ出たら分割）</option>
+        <option value="letter">レター（はみ出たら分割）</option>
+      </select>
     </div>
-    <input type="range" id="gapSlider" min="0" max="200" value="40">
-    <div class="gapval"><span>狭い</span><span id="gapLabel">40px</span><span>広い</span></div>
-    <div class="row">
-      <button class="ghost" id="btnBackToAdjust">線を直す</button>
-      <button class="primary block" id="btnAddPage" style="margin-left:auto;">このページを追加</button>
-    </div>
+    <button class="primary" id="download-btn" disabled>PDFをダウンロード</button>
   </section>
 
-  <!-- STEP 4: pages & export -->
-  <section class="panel" id="panelPages">
-    <h2>④ ページ一覧<span class="badge" id="pageCountBadge" style="display:none;"></span></h2>
-    <div id="thumbs" class="thumbs"></div>
-    <div class="empty" id="emptyPages">まだページがありません。撮影して追加してください。</div>
-    <p class="hint" style="margin-top:14px;">PDFのページのふち全体に付ける余白(外側の白い縁)</p>
-    <input type="range" id="marginSlider" min="0" max="30" value="0">
-    <div class="gapval"><span>ふちなし</span><span id="marginLabel">0mm</span><span>広め</span></div>
-    <div class="row">
-      <button class="ghost" id="btnAddMore">＋ 続けて撮影する</button>
-      <button class="primary block" id="btnExport" disabled style="margin-left:auto;">PDFを書き出す</button>
-    </div>
-  </section>
-</main>
+  <footer>
+    このページ1枚だけで動く静的なツールです。サーバーには何も送信されないので、そのままファイルを保存すればオフラインでも使えますし、どこにホストしても動きます。
+  </footer>
 
-<footer>撮影・処理はすべてこの画面内（お使いの端末）で行われ、外部に送信されません。</footer>
+</div>
 
 <script>
-(function(){
-  const MAX_DIM = 1800; // cap resolution for performance
+(function () {
+  const fileInput = document.getElementById('file-input');
+  const rotationSlider = document.getElementById('rotation-slider');
+  const rotationValue = document.getElementById('rotation-value');
+  const orientationToggle = document.getElementById('orientation-toggle');
+  const gapSlider = document.getElementById('gap-slider');
+  const gapValue = document.getElementById('gap-value');
+  const sensitivitySlider = document.getElementById('sensitivity-slider');
+  const sensitivityValue = document.getElementById('sensitivity-value');
+  const redetectBtn = document.getElementById('redetect-btn');
+  const paperSelect = document.getElementById('paper-select');
+  const originalStage = document.getElementById('original-stage');
+  const originalCanvas = document.getElementById('original-canvas');
+  const originalEmpty = document.getElementById('original-empty');
+  const boundaryLayer = document.getElementById('boundary-layer');
+  const editHint = document.getElementById('edit-hint');
+  const resultCanvas = document.getElementById('result-canvas');
+  const resultEmpty = document.getElementById('result-empty');
+  const statusEl = document.getElementById('status');
+  const downloadBtn = document.getElementById('download-btn');
 
-  let stream = null;
-  let lineCount = 6;
-  let sourceImg = null;     // current captured/loaded image (HTMLImageElement)
-  let srcW = 0, srcH = 0;
-  let lines = [];           // x positions in source-image pixel space
-  let dragIdx = -1;
-  let selectedIdx = -1;
-  let adjScale = 1;         // displayed canvas px per source px
-  let gapPx = 40;
-  let composedDataURL = null;
-  let composedW = 0, composedH = 0;
-  const pages = [];         // {dataURL, w, h}
+  const rawCanvas = document.createElement('canvas');
+  const rawCtx = rawCanvas.getContext('2d');
+  const sourceCanvas = document.createElement('canvas');
+  const sourceCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
 
-  const $ = id => document.getElementById(id);
-  const dots = [$('dot1'),$('dot2'),$('dot3'),$('dot4')];
+  let orientation = 'vertical';
+  let gray = null;
+  let imgW = 0, imgH = 0;
+  let boundaries = []; // interior split positions, source-pixel coords along primary axis
+  let hasImage = false;
+  let rawLoaded = false;
+  let analyzeTimer = null;
+  let rotationTimer = null;
+  let dragIndex = -1;
 
-  function setStep(n){
-    dots.forEach((d,i)=>{
-      d.classList.remove('active','done');
-      if(i < n-1) d.classList.add('done');
-      if(i === n-1) d.classList.add('active');
-    });
+  const MAX_DIM = 2000;
+
+  rotationSlider.addEventListener('input', () => {
+    rotationValue.textContent = parseFloat(rotationSlider.value).toFixed(1) + '°';
+    clearTimeout(rotationTimer);
+    rotationTimer = setTimeout(applyRotationAndAnalyze, 150);
+  });
+
+  orientationToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    orientation = btn.dataset.value;
+    [...orientationToggle.children].forEach(b => b.classList.toggle('active', b === btn));
+    if (hasImage) scheduleAnalyze(0);
+  });
+
+  gapSlider.addEventListener('input', () => {
+    gapValue.textContent = parseFloat(gapSlider.value).toFixed(1) + '%';
+    if (hasImage) renderOutput();
+  });
+
+  sensitivitySlider.addEventListener('input', () => {
+    sensitivityValue.textContent = sensitivitySlider.value;
+    if (hasImage) scheduleAnalyze(150);
+  });
+
+  redetectBtn.addEventListener('click', () => { if (hasImage) analyzeAndRender(); });
+
+  function scheduleAnalyze(delay) {
+    clearTimeout(analyzeTimer);
+    analyzeTimer = setTimeout(analyzeAndRender, delay);
   }
 
-  function show(id){ $(id).style.display = ''; }
-  function hide(id){ $(id).style.display = 'none'; }
-
-  // ---------- STEP 1: camera ----------
-  const video = $('video');
-  const camOverlay = $('camOverlay');
-  const camCtx = camOverlay.getContext('2d');
-
-  async function startCamera(){
-    $('camError').style.display = 'none';
-    try{
-      stream = await navigator.mediaDevices.getUserMedia({
-        video:{ facingMode:{ ideal:'environment' } },
-        audio:false
-      });
-      video.srcObject = stream;
-      await video.play();
-      requestAnimationFrame(drawCamOverlay);
-    }catch(err){
-      $('camError').textContent = 'カメラを起動できませんでした。下の「端末から写真を選ぶ」をお使いください。';
-      $('camError').style.display = 'block';
-      video.style.display = 'none';
-    }
-  }
-
-  function drawCamOverlay(){
-    if(!stream) return;
-    const w = video.videoWidth, h = video.videoHeight;
-    if(w && h){
-      camOverlay.width = w; camOverlay.height = h;
-      camOverlay.style.position = 'absolute';
-      camOverlay.style.top = 0; camOverlay.style.left = 0;
-      camCtx.clearRect(0,0,w,h);
-      camCtx.strokeStyle = 'rgba(220,60,45,0.85)';
-      camCtx.lineWidth = Math.max(1, w/500);
-      const step = w/(lineCount+1);
-      for(let i=1;i<=lineCount;i++){
-        const x = Math.round(step*i);
-        camCtx.beginPath();
-        camCtx.moveTo(x,0);
-        camCtx.lineTo(x,h);
-        camCtx.stroke();
-      }
-    }
-    requestAnimationFrame(drawCamOverlay);
-  }
-
-  const lineCountInput = $('lineCountInput');
-  function setLineCount(n){
-    lineCount = Math.max(1, Math.min(100, Math.round(n) || 1));
-    lineCountInput.value = lineCount;
-  }
-  lineCountInput.oninput = ()=> setLineCount(parseInt(lineCountInput.value,10));
-  $('lineQ10').onclick = ()=> setLineCount(lineCount+10);
-  $('lineQ25').onclick = ()=> setLineCount(lineCount+25);
-  $('lineQ50').onclick = ()=> setLineCount(50);
-  $('lineQ100').onclick = ()=> setLineCount(100);
-
-  function stopCamera(){
-    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  }
-
-  $('btnShoot').onclick = ()=>{
-    if(!video.videoWidth) return;
-    const cvs = document.createElement('canvas');
-    let w = video.videoWidth, h = video.videoHeight;
-    const scale = Math.min(1, MAX_DIM/Math.max(w,h));
-    cvs.width = Math.round(w*scale); cvs.height = Math.round(h*scale);
-    cvs.getContext('2d').drawImage(video, 0,0, cvs.width, cvs.height);
-    loadSourceFromDataURL(cvs.toDataURL('image/jpeg',0.92));
-    stopCamera();
-  };
-
-  $('fileInput').onchange = (e)=>{
-    const f = e.target.files[0];
-    if(!f) return;
-    const reader = new FileReader();
-    reader.onload = ev => loadSourceFromDataURL(ev.target.result);
-    reader.readAsDataURL(f);
-  };
-
-  function loadSourceFromDataURL(url){
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
     const img = new Image();
-    img.onload = ()=>{
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
       let w = img.width, h = img.height;
-      const scale = Math.min(1, MAX_DIM/Math.max(w,h));
-      if(scale < 1){
-        const cvs = document.createElement('canvas');
-        cvs.width = Math.round(w*scale); cvs.height = Math.round(h*scale);
-        cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height);
-        const img2 = new Image();
-        img2.onload = ()=> beginAdjust(img2);
-        img2.src = cvs.toDataURL('image/jpeg',0.92);
-      } else {
-        beginAdjust(img);
+      if (Math.max(w, h) > MAX_DIM) {
+        const scale = MAX_DIM / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
       }
+      rawCanvas.width = w;
+      rawCanvas.height = h;
+      rawCtx.drawImage(img, 0, 0, w, h);
+      rawLoaded = true;
+
+      rotationSlider.value = 0;
+      rotationValue.textContent = '0°';
+      boundaries = [];
+
+      originalStage.style.display = 'block';
+      originalEmpty.style.display = 'none';
+      editHint.style.display = 'block';
+
+      applyRotationAndAnalyze();
+      URL.revokeObjectURL(url);
     };
     img.src = url;
+  });
+
+  function applyRotationAndAnalyze() {
+    if (!rawLoaded) return;
+    const deg = parseFloat(rotationSlider.value);
+    const rad = deg * Math.PI / 180;
+    const rw = rawCanvas.width, rh = rawCanvas.height;
+    const newW = Math.max(1, Math.round(Math.abs(rw * Math.cos(rad)) + Math.abs(rh * Math.sin(rad))));
+    const newH = Math.max(1, Math.round(Math.abs(rw * Math.sin(rad)) + Math.abs(rh * Math.cos(rad))));
+
+    sourceCanvas.width = newW;
+    sourceCanvas.height = newH;
+    sourceCtx.save();
+    sourceCtx.fillStyle = '#ffffff';
+    sourceCtx.fillRect(0, 0, newW, newH);
+    sourceCtx.translate(newW / 2, newH / 2);
+    sourceCtx.rotate(rad);
+    sourceCtx.drawImage(rawCanvas, -rw / 2, -rh / 2);
+    sourceCtx.restore();
+
+    imgW = newW; imgH = newH;
+    originalCanvas.width = imgW;
+    originalCanvas.height = imgH;
+    originalCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
+
+    buildGrayscale();
+    hasImage = true;
+    analyzeAndRender();
   }
 
-  function beginAdjust(img){
-    stopCamera();
-    sourceImg = img;
-    srcW = img.width; srcH = img.height;
-    lines = evenLines(lineCount, srcW);
-    selectedIdx = -1;
-    hide('panelCapture'); show('panelAdjust'); hide('panelPreview');
-    setStep(2);
-    setTimeout(drawAdjust, 0);
+  function buildGrayscale() {
+    const data = sourceCtx.getImageData(0, 0, imgW, imgH).data;
+    gray = new Uint8ClampedArray(imgW * imgH);
+    for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+      gray[p] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    }
   }
 
-  function evenLines(n, width){
-    const step = width/(n+1);
-    const arr = [];
-    for(let i=1;i<=n;i++) arr.push(Math.round(step*i));
-    return arr;
+  function otsuThreshold() {
+    const hist = new Array(256).fill(0);
+    const step = Math.max(1, Math.floor(gray.length / 200000));
+    let total = 0;
+    for (let i = 0; i < gray.length; i += step) { hist[gray[i]]++; total++; }
+    let sum = 0;
+    for (let t = 0; t < 256; t++) sum += t * hist[t];
+    let sumB = 0, wB = 0, varMax = 0, threshold = 128;
+    for (let t = 0; t < 256; t++) {
+      wB += hist[t];
+      if (wB === 0) continue;
+      const wF = total - wB;
+      if (wF === 0) break;
+      sumB += t * hist[t];
+      const mB = sumB / wB;
+      const mF = (sum - sumB) / wF;
+      const varBetween = wB * wF * (mB - mF) * (mB - mF);
+      if (varBetween > varMax) { varMax = varBetween; threshold = t; }
+    }
+    return threshold;
   }
 
-  // ---------- STEP 2: adjust ----------
-  const adjCanvas = $('adjCanvas');
-  const adjCtx = adjCanvas.getContext('2d');
+  function smooth(arr, radius) {
+    if (radius <= 0) return arr;
+    const n = arr.length;
+    const out = new Float32Array(n);
+    const prefix = new Float64Array(n + 1);
+    for (let i = 0; i < n; i++) prefix[i + 1] = prefix[i] + arr[i];
+    for (let i = 0; i < n; i++) {
+      const lo = Math.max(0, i - radius);
+      const hi = Math.min(n - 1, i + radius);
+      out[i] = (prefix[hi + 1] - prefix[lo]) / (hi - lo + 1);
+    }
+    return out;
+  }
 
-  function drawAdjust(){
-    const containerW = adjCanvas.parentElement.clientWidth;
-    adjScale = containerW / srcW;
-    adjCanvas.width = containerW;
-    adjCanvas.height = Math.round(srcH*adjScale);
-    adjCtx.drawImage(sourceImg, 0,0, adjCanvas.width, adjCanvas.height);
-    lines.forEach((x,i)=>{
-      const dx = x*adjScale;
-      adjCtx.strokeStyle = (i===selectedIdx) ? 'rgba(163,53,42,1)' : 'rgba(220,60,45,0.85)';
-      adjCtx.lineWidth = (i===selectedIdx) ? 3 : 2;
-      adjCtx.beginPath();
-      adjCtx.moveTo(dx,0); adjCtx.lineTo(dx, adjCanvas.height);
-      adjCtx.stroke();
-      // handle
-      adjCtx.fillStyle = adjCtx.strokeStyle;
-      adjCtx.beginPath();
-      adjCtx.arc(dx, 14, 7, 0, Math.PI*2);
-      adjCtx.fill();
+  function analyzeAndRender() {
+    if (!hasImage) return;
+    statusEl.textContent = '解析中…';
+    statusEl.classList.remove('warn');
+
+    const darkT = otsuThreshold();
+    const isVertical = orientation === 'vertical';
+    const primaryLen = isVertical ? imgW : imgH;
+    const secondaryLen = isVertical ? imgH : imgW;
+
+    let inkFraction = new Float32Array(primaryLen);
+    for (let p = 0; p < primaryLen; p++) {
+      let count = 0;
+      if (isVertical) {
+        for (let y = 0; y < secondaryLen; y++) { if (gray[y * imgW + p] < darkT) count++; }
+      } else {
+        const rowStart = p * imgW;
+        for (let x = 0; x < secondaryLen; x++) { if (gray[rowStart + x] < darkT) count++; }
+      }
+      inkFraction[p] = count / secondaryLen;
+    }
+
+    const smoothRadius = Math.max(1, Math.round(primaryLen * 0.003));
+    inkFraction = smooth(inkFraction, smoothRadius);
+
+    const sens = parseInt(sensitivitySlider.value, 10);
+    const minInkFraction = 0.005 + (sens / 100) * 0.055;
+
+    const hasText = new Uint8Array(primaryLen);
+    for (let p = 0; p < primaryLen; p++) hasText[p] = inkFraction[p] > minInkFraction ? 1 : 0;
+
+    const minRun = Math.max(4, Math.round(primaryLen * 0.006));
+    const runs = segmentRuns(hasText, minRun);
+
+    boundaries = runs
+      .filter((r, idx) => r.type === 'gap' && idx > 0 && idx < runs.length - 1)
+      .map(r => Math.round((r.start + r.end) / 2));
+
+    renderBoundaryOverlay();
+    updateStatus();
+    renderOutput();
+  }
+
+  function segmentRuns(hasText, minRun) {
+    const n = hasText.length;
+    let list = [];
+    let i = 0;
+    while (i < n) {
+      const val = hasText[i];
+      let j = i;
+      while (j < n && hasText[j] === val) j++;
+      list.push({ type: val ? 'text' : 'gap', start: i, end: j });
+      i = j;
+    }
+    let merged = true;
+    while (merged && list.length > 1) {
+      merged = false;
+      for (let k = 0; k < list.length; k++) {
+        if (list[k].end - list[k].start < minRun) {
+          if (k > 0) { list[k - 1].end = list[k].end; list.splice(k, 1); }
+          else { list[k + 1].start = list[k].start; list.splice(k, 1); }
+          merged = true;
+          break;
+        }
+      }
+    }
+    for (let k = list.length - 1; k > 0; k--) {
+      if (list[k].type === list[k - 1].type) { list[k - 1].end = list[k].end; list.splice(k, 1); }
+    }
+    return list;
+  }
+
+  function updateStatus() {
+    const n = boundaries.length + 1;
+    if (boundaries.length === 0) {
+      statusEl.textContent = 'うまく行を検出できませんでした。感度を上げるか、画像をタップして線を追加してください。';
+      statusEl.classList.add('warn');
+    } else {
+      statusEl.textContent = n + '個の区画に分けています（線をドラッグして調整できます）。';
+      statusEl.classList.remove('warn');
+    }
+  }
+
+  // ---- boundary overlay (drag / add / delete) ----
+  function renderBoundaryOverlay() {
+    boundaryLayer.innerHTML = '';
+    const isVertical = orientation === 'vertical';
+    const primaryLen = isVertical ? imgW : imgH;
+    boundaries.forEach((pos, idx) => {
+      const pct = (pos / primaryLen) * 100;
+      const line = document.createElement('div');
+      line.className = 'boundary-line ' + (isVertical ? 'vertical' : 'horizontal');
+      if (isVertical) line.style.left = pct + '%'; else line.style.top = pct + '%';
+      line.addEventListener('pointerdown', (e) => startDrag(e, idx));
+      line.addEventListener('click', (e) => e.stopPropagation());
+      boundaryLayer.appendChild(line);
+
+      const handle = document.createElement('div');
+      handle.className = 'boundary-handle ' + (isVertical ? 'vertical' : 'horizontal');
+      handle.textContent = '×';
+      if (isVertical) handle.style.left = pct + '%'; else handle.style.top = pct + '%';
+      handle.addEventListener('click', (e) => { e.stopPropagation(); removeBoundary(idx); });
+      handle.addEventListener('pointerdown', (e) => e.stopPropagation());
+      boundaryLayer.appendChild(handle);
     });
   }
 
-  function nearestLine(px){
-    let best=-1, bestD=18;
-    lines.forEach((x,i)=>{
-      const d = Math.abs(x*adjScale - px);
-      if(d<bestD){ bestD=d; best=i; }
-    });
-    return best;
+  function startDrag(e, idx) {
+    e.stopPropagation();
+    dragIndex = idx;
+    const target = e.currentTarget;
+    target.setPointerCapture(e.pointerId);
+    const onMove = (ev) => dragMove(ev);
+    const onUp = (ev) => {
+      target.removeEventListener('pointermove', onMove);
+      target.removeEventListener('pointerup', onUp);
+      dragIndex = -1;
+      renderOutput();
+    };
+    target.addEventListener('pointermove', onMove);
+    target.addEventListener('pointerup', onUp);
   }
 
-  let downPt=null, moved=false;
-  adjCanvas.addEventListener('pointerdown', e=>{
-    adjCanvas.setPointerCapture(e.pointerId);
-    const rect = adjCanvas.getBoundingClientRect();
-    const px = e.clientX-rect.left;
-    dragIdx = nearestLine(px);
-    downPt = px; moved=false;
+  function dragMove(e) {
+    if (dragIndex < 0) return;
+    const isVertical = orientation === 'vertical';
+    const primaryLen = isVertical ? imgW : imgH;
+    const rect = originalCanvas.getBoundingClientRect();
+    let pct = isVertical ? (e.clientX - rect.left) / rect.width : (e.clientY - rect.top) / rect.height;
+    pct = Math.min(0.995, Math.max(0.005, pct));
+    boundaries[dragIndex] = Math.round(pct * primaryLen);
+    renderBoundaryOverlay();
+  }
+
+  function removeBoundary(idx) {
+    boundaries.splice(idx, 1);
+    renderBoundaryOverlay();
+    updateStatus();
+    renderOutput();
+  }
+
+  originalStage.addEventListener('click', (e) => {
+    if (!hasImage) return;
+    const isVertical = orientation === 'vertical';
+    const primaryLen = isVertical ? imgW : imgH;
+    const rect = originalCanvas.getBoundingClientRect();
+    let pct = isVertical ? (e.clientX - rect.left) / rect.width : (e.clientY - rect.top) / rect.height;
+    pct = Math.min(0.995, Math.max(0.005, pct));
+    const pos = Math.round(pct * primaryLen);
+    const minGap = Math.max(4, Math.round(primaryLen * 0.01));
+    const tooClose = boundaries.some(b => Math.abs(b - pos) < minGap);
+    if (tooClose) return;
+    boundaries.push(pos);
+    boundaries.sort((a, b) => a - b);
+    renderBoundaryOverlay();
+    updateStatus();
+    renderOutput();
   });
-  adjCanvas.addEventListener('pointermove', e=>{
-    if(dragIdx<0) return;
-    moved = true;
-    const rect = adjCanvas.getBoundingClientRect();
-    const px = Math.max(0, Math.min(adjCanvas.width, e.clientX-rect.left));
-    lines[dragIdx] = Math.round(px/adjScale);
-    lines.sort((a,b)=>a-b);
-    // dragIdx may shift after sort; re-find by value proximity not needed since redraw uses index only for color
-    drawAdjust();
-  });
-  adjCanvas.addEventListener('pointerup', e=>{
-    if(dragIdx>=0){
-      selectedIdx = moved ? dragIdx : dragIdx;
-    }
-    dragIdx=-1;
-    drawAdjust();
-  });
 
-  $('btnAddLine').onclick = ()=>{
-    const x = Math.round(srcW/2);
-    lines.push(x);
-    lines.sort((a,b)=>a-b);
-    selectedIdx = lines.indexOf(x);
-    drawAdjust();
-  };
-  $('btnDelLine').onclick = ()=>{
-    if(selectedIdx>=0 && selectedIdx<lines.length){
-      lines.splice(selectedIdx,1);
-      selectedIdx=-1;
-      drawAdjust();
-    }
-  };
-  $('btnEven').onclick = ()=>{
-    lines = evenLines(Math.max(1,lines.length||lineCount), srcW);
-    selectedIdx=-1;
-    drawAdjust();
-  };
-  $('btnRetake').onclick = ()=>{
-    hide('panelAdjust'); show('panelCapture'); setStep(1);
-    startCamera();
-  };
-  window.addEventListener('resize', ()=>{ if(sourceImg && $('panelAdjust').style.display!=='none') drawAdjust(); });
+  // ---- rendering ----
 
-  $('btnConfirmLines').onclick = ()=>{
-    if(lines.length<1){ alert('線を1本以上残してください。'); return; }
-    hide('panelAdjust'); show('panelPreview'); setStep(3);
-    renderComposed();
-  };
+  function renderOutput() {
+    if (!hasImage) return;
+    const isVertical = orientation === 'vertical';
+    const primaryLen = isVertical ? imgW : imgH;
+    const gapPercent = parseFloat(gapSlider.value);
+    const gapPx = Math.round(primaryLen * gapPercent / 100);
 
-  // ---------- STEP 3: compose with gaps ----------
-  const prevCanvas = $('prevCanvas');
-  const prevCtx = prevCanvas.getContext('2d');
+    const bnds = [...boundaries].sort((a, b) => a - b);
+    const points = [0, ...bnds, primaryLen];
 
-  function renderComposed(){
-    const bounds = [0, ...lines, srcW];
-    const outW = srcW + gapPx*lines.length;
-    prevCanvas.width = outW;
-    prevCanvas.height = srcH;
-    prevCtx.fillStyle = '#ffffff';
-    prevCtx.fillRect(0,0,outW,srcH);
+    const total = primaryLen + bnds.length * gapPx;
+    resultCanvas.width = isVertical ? total : imgW;
+    resultCanvas.height = isVertical ? imgH : total;
+    const ctx = resultCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+
     let cursor = 0;
-    for(let i=0;i<bounds.length-1;i++){
-      const segW = bounds[i+1]-bounds[i];
-      if(segW>0){
-        prevCtx.drawImage(sourceImg, bounds[i],0, segW, srcH, cursor,0, segW, srcH);
-        cursor += segW;
+    for (let i = 0; i < points.length - 1; i++) {
+      const segStart = points[i], segEnd = points[i + 1];
+      const len = segEnd - segStart;
+      if (len > 0) {
+        if (isVertical) ctx.drawImage(sourceCanvas, segStart, 0, len, imgH, cursor, 0, len, imgH);
+        else ctx.drawImage(sourceCanvas, 0, segStart, imgW, len, 0, cursor, imgW, len);
+        cursor += len;
       }
-      if(i < lines.length){ cursor += gapPx; }
+      if (i < points.length - 2) cursor += gapPx;
     }
-    composedW = outW; composedH = srcH;
-    composedDataURL = prevCanvas.toDataURL('image/jpeg',0.9);
-    // fit displayed canvas visually via CSS max-width already (width:100%)
+
+    resultCanvas.style.display = 'block';
+    resultEmpty.style.display = 'none';
+    downloadBtn.disabled = false;
   }
 
-  $('gapSlider').oninput = (e)=>{
-    gapPx = parseInt(e.target.value,10);
-    $('gapLabel').textContent = gapPx+'px';
-    renderComposed();
-  };
-  $('gapLabel').textContent = gapPx+'px';
-
-  $('btnBackToAdjust').onclick = ()=>{
-    hide('panelPreview'); show('panelAdjust'); setStep(2);
-    setTimeout(drawAdjust,0);
-  };
-
-  $('btnAddPage').onclick = ()=>{
-    pages.push({dataURL:composedDataURL, w:composedW, h:composedH});
-    refreshThumbs();
-    hide('panelPreview');
-    hide('panelAdjust');
-    show('panelCapture');
-    setStep(1);
-    startCamera();
-  };
-
-  // ---------- STEP 4: pages ----------
-  function refreshThumbs(){
-    const box = $('thumbs');
-    box.innerHTML = '';
-    pages.forEach((p,i)=>{
-      const d = document.createElement('div');
-      d.className='thumb';
-      d.innerHTML = '<span class="no">'+(i+1)+'</span><img src="'+p.dataURL+'"><button class="rm" data-i="'+i+'">×</button>';
-      box.appendChild(d);
-    });
-    box.querySelectorAll('.rm').forEach(btn=>{
-      btn.onclick = ()=>{ pages.splice(parseInt(btn.dataset.i,10),1); refreshThumbs(); };
-    });
-    $('emptyPages').style.display = pages.length ? 'none':'block';
-    $('btnExport').disabled = pages.length===0;
-    $('pageCountBadge').style.display = pages.length ? 'inline-block':'none';
-    $('pageCountBadge').textContent = pages.length+'ページ';
+  function cropCanvas(canvas, sy, sh) {
+    const c = document.createElement('canvas');
+    c.width = canvas.width;
+    c.height = sh;
+    c.getContext('2d').drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+    return c;
   }
 
-  $('btnAddMore').onclick = ()=>{
-    hide('panelPreview'); hide('panelAdjust'); show('panelCapture'); setStep(1);
-    startCamera();
-  };
-
-  let marginMm = 0;
-  $('marginSlider').oninput = (e)=>{
-    marginMm = parseInt(e.target.value,10);
-    $('marginLabel').textContent = marginMm+'mm';
-  };
-
-  $('btnExport').onclick = ()=>{
-    if(!pages.length) return;
+  downloadBtn.addEventListener('click', () => {
+    const w = resultCanvas.width, h = resultCanvas.height;
+    const paper = paperSelect.value;
     const { jsPDF } = window.jspdf;
-    const mmPerPx = 25.4/96;
-    let pdf = null;
-    pages.forEach((p,i)=>{
-      const imgWmm = p.w*mmPerPx, imgHmm = p.h*mmPerPx;
-      const wmm = imgWmm + marginMm*2, hmm = imgHmm + marginMm*2;
-      const orient = wmm>=hmm ? 'l':'p';
-      if(i===0){
-        pdf = new jsPDF({orientation:orient, unit:'mm', format:[wmm,hmm]});
-      }else{
-        pdf.addPage([wmm,hmm], orient);
-      }
-      pdf.setFillColor(255,255,255);
-      pdf.rect(0,0,wmm,hmm,'F');
-      pdf.addImage(p.dataURL,'JPEG',marginMm,marginMm,imgWmm,imgHmm);
-    });
-    pdf.save('行間ひろげ.pdf');
-  };
 
-  // init
-  refreshThumbs();
-  setStep(1);
-  startCamera();
+    if (paper === 'original') {
+      const dataUrl = resultCanvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: w > h ? 'l' : 'p', unit: 'px', format: [w, h] });
+      pdf.addImage(dataUrl, 'PNG', 0, 0, w, h);
+      pdf.save('行間びらき.pdf');
+      return;
+    }
+
+    const orientation = w > h ? 'l' : 'p';
+    const pdf = new jsPDF({ unit: 'mm', format: paper, orientation });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const contentW = pageW - margin * 2;
+    const contentH = pageH - margin * 2;
+    const scale = contentW / w; // mm per source px
+    const sliceHeightPx = Math.max(1, Math.floor(contentH / scale));
+
+    let sy = 0;
+    let first = true;
+    while (sy < h) {
+      const sh = Math.min(sliceHeightPx, h - sy);
+      const slice = cropCanvas(resultCanvas, sy, sh);
+      const dataUrl = slice.toDataURL('image/png');
+      if (!first) pdf.addPage(paper, orientation);
+      pdf.addImage(dataUrl, 'PNG', margin, margin, contentW, sh * scale);
+      sy += sh;
+      first = false;
+    }
+    pdf.save('行間びらき.pdf');
+  });
 })();
 </script>
 </body>
